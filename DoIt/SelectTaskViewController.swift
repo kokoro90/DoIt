@@ -11,20 +11,23 @@ import UIKit
 class SelectTaskViewController: UIViewController
 {
     @IBOutlet weak var selectTaskLabel: UILabel!
-    var task = Task()
-    var previousVC = TasksViewController()
+    var task: Task? = nil
 
     override func viewDidLoad()
     {
         super.viewDidLoad()
 
-        selectTaskLabel.text = task.name
+        selectTaskLabel.text = (task!.isImportant ? "❗️" : "") + task!.name!
     }
 
     @IBAction func completeTaskButton(_ sender: Any)
     {
-        previousVC.tasks.remove(at: previousVC.selectedIndex)
-        previousVC.tableView.reloadData()
+        let delegate = UIApplication.shared.delegate as! AppDelegate
+        let context = delegate.persistentContainer.viewContext
+
+        context.delete(task!)
+        delegate.saveContext()
+
         navigationController?.popViewController(animated: true)
     }
 }

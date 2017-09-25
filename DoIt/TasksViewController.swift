@@ -14,18 +14,20 @@ class TasksViewController: UIViewController, UITableViewDataSource, UITableViewD
     @IBOutlet weak var tableView: UITableView!
 
     var tasks: [Task] = []
-    var selectedIndex = 0
 
     override func viewDidLoad()
     {
         super.viewDidLoad()
 
-        tasks = makeTasks()
-
         tableView.dataSource = self
         tableView.delegate = self
     }
 
+    override func viewWillAppear(_ animated: Bool)
+    {
+        getTasks()
+        tableView.reloadData()
+    }
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int
     {
         return tasks.count
@@ -35,7 +37,7 @@ class TasksViewController: UIViewController, UITableViewDataSource, UITableViewD
     {
         let cell = UITableViewCell()
         let task = tasks[indexPath.row]
-        cell.textLabel?.text = (task.isImportant ? "❗️" : "") + task.name
+        cell.textLabel?.text = (task.isImportant ? "❗️" : "") + task.name!
         return cell
     }
 
@@ -43,27 +45,25 @@ class TasksViewController: UIViewController, UITableViewDataSource, UITableViewD
     {
         tableView.deselectRow(at: indexPath, animated: true)
         let task = tasks[indexPath.row]
-        selectedIndex = indexPath.row
         performSegue(withIdentifier: "selectTaskSegue", sender: task)
     }
 
-    func makeTasks() -> [Task]
+
+    func getTasks()
     {
-        let task1 = Task()
-        task1.name = "Make breakfast"
-        task1.isImportant = false
-        
-        let task2 = Task()
-        task2.name = "Send kids to school"
-        task2.isImportant = true
-        
-        let task3 = Task()
-        task3.name = "Take nap"
-        task3.isImportant = false
-        
-        return [task1, task2, task3]
+        let delegate = UIApplication.shared.delegate as! AppDelegate
+        let context = delegate.persistentContainer.viewContext
+
+        do
+        {
+            tasks = try context.fetch(Task.fetchRequest()) as! [Task]
+        }
+        catch
+        {
+            print("Caught an exception")
+        }
     }
-    
+
     @IBAction func addItemTapped(_ sender: Any)
     {
         performSegue(withIdentifier: "addSegue", sender: nil)
@@ -71,16 +71,10 @@ class TasksViewController: UIViewController, UITableViewDataSource, UITableViewD
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?)
     {
-        if segue.identifier == "addSegue"
-        {
-            let nextVC = segue.destination as! AddTaskViewController
-            nextVC.previousVC = self
-        }
-        else if segue.identifier == "selectTaskSegue"
+        if segue.identifier == "selectTaskSegue"
         {
             let nextVC = segue.destination as! SelectTaskViewController
-            nextVC.task = sender as! Task
-            nextVC.previousVC = self
+            nextVC.task = sender as? Task
         }
     }
 }
